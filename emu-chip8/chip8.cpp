@@ -1,5 +1,5 @@
 #include "chip8.h"
-
+#include <SFML\Audio.hpp>
 
 namespace sgb {
 
@@ -43,9 +43,35 @@ namespace sgb {
 				}
 			}
 		}
+
 		for (int i = 0; i < 80; i++) {
 			memory[i] = chip8_fontset[i];
 		}
+
+		// set keyboard mapping
+		keymap[0] = sf::Keyboard::Num1;
+		keymap[1] = sf::Keyboard::Num2;
+		keymap[2] = sf::Keyboard::Num3;
+		keymap[3] = sf::Keyboard::Num4;
+
+
+		keymap[4] = sf::Keyboard::Q;
+		keymap[5] = sf::Keyboard::W;
+		keymap[6] = sf::Keyboard::E;
+		keymap[7] = sf::Keyboard::R;
+
+		keymap[8] = sf::Keyboard::A;
+		keymap[9] = sf::Keyboard::S;
+		keymap[10] = sf::Keyboard::D;
+		keymap[11] = sf::Keyboard::F;
+
+		keymap[12] = sf::Keyboard::Z;
+		keymap[13] = sf::Keyboard::X;
+		keymap[14] = sf::Keyboard::C;
+		keymap[15] = sf::Keyboard::V;
+
+		// load sound
+
 		srand(time(NULL));
 	}
 
@@ -57,6 +83,9 @@ namespace sgb {
 			for (size_t i = 0; i < bufferSize; i++)
 				memory[i + PROGSTART] = buffer[i];
 
+			for (int i = 0x200; i < 0x200 + bufferSize; i+=2) {
+				printf("%x %d\n", memory[i] << 8 | memory[i+1],i);
+			}
 			fclose(prog);
 		}
 		else {
@@ -75,18 +104,20 @@ namespace sgb {
 		case 0x0000:
 			switch (opcode & 0x000F) {
 			case 0x0000: // 0x00E0: Clears the screen
-					// do stuff
+				for (int i = 0; i < GFXSIZE; i++)
+					gfx[i] = 0;
+				drawFlag = true;
+				next();
 				break;
 
 			case 0x000E: // 0x00EE: Returns from subroutine
-				pc = stack[sp];
 				--sp;
+				pc = stack[sp];
 				next();
 				break;
 
 			default:
 				printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
-				next();
 				break;
 			}
 			break;
@@ -96,8 +127,8 @@ namespace sgb {
 			break;
 
 		case 0x2000: // 2NNN: call subroutine at address 2NNN
-			++sp;
 			stack[sp] = pc;
+			++sp;
 			pc = opcode & 0x0FFF;
 			break;
 
@@ -128,10 +159,6 @@ namespace sgb {
 			break;
 
 		case 0x7000: // 0x7XNN: adds NN to VX
-			if ((opcode & 0x00FF) > (0xFF - V[(opcode & 0x0F00) >> 8]))
-				V[0xF] = 1; // set carry
-			else
-				V[0xF] = 0;
 			V[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
 			next();
 			break;
@@ -188,19 +215,18 @@ namespace sgb {
 					V[0xF] = 0; // borrow
 				else
 					V[0xF] = 1;
-				V[(opcode & 0x00F0) >> 4] -= V[(opcode & 0x0F00) >> 8];
+				V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
 				next();
 				break;
 
 			case 0x000E: // 0x8XY8: shift VX left by one
-				V[0xF] = V[(opcode & 0x0F00) >> 8] & 0x0080; // store most significant bit
+				V[0xF] = V[(opcode & 0x0F00) >> 8] >> 7; // store most significant bit
 				V[(opcode & 0x0F00) >> 8] <<= 1;
 				next();
 				break;
 
 			default:
 				printf("Unknown Opcode [0x8000]: 0x%X\n", opcode);
-				next();
 				break;
 			}
 			break;
@@ -222,18 +248,15 @@ namespace sgb {
 			break;
 
 		case 0xC000: // 0xCXNN: set VX to random AND NN
-		{
-			uint8_t rnum = rand() % 255;
-			V[(opcode & 0x0F00) >> 8] = rnum & (opcode & 0x00FF);
+			V[(opcode & 0x0F00) >> 8] = (rand()%255) & (opcode & 0x00FF);
 			next();
-		}
 			break;
 
 		case 0xD000: // 0xDXYN: draw 8 pixel width sprite from (x,y) N pixels high
 		{
 			uint16_t x = V[(opcode & 0x0F00) >> 8];
 			uint16_t y = V[(opcode & 0x00F0) >> 4];
-			uint16_t height = V[(opcode & 0x000F)];
+			uint16_t height = (opcode & 0x000F);
 			uint16_t pixel;
 
 			V[0xF] = 0;
@@ -243,7 +266,7 @@ namespace sgb {
 					if((pixel & (0x80 >> xline))!=0){
 						if (gfx[(x + xline + ((y + yline) * 64))] == 1)
 							V[0xF] = 1;
-						gfx[x + xline + ((y + yline))] ^= 1;
+						gfx[x + xline + ((y + yline)*64)] ^= 1;
 					}
 				}
 			}
@@ -263,6 +286,7 @@ namespace sgb {
 					next();
 				break;
 
+			case 0x00A0: // hack
 			case 0x00A1: // 0xEXA1: skip next isntruction if key in VX isn't pressed
 				if (key[V[(opcode & 0x0F00) >> 8]] == 0)
 					skip();
@@ -271,8 +295,7 @@ namespace sgb {
 				break;
 
 			default:
-				printf("Unknown opcode [0xE000]: 0x%X\n", opcode);
-				next();
+				printf("Unknown opcode [0xE000]: 0x%X %d\n", opcode,pc);
 				break;
 			}
 			break;
@@ -312,13 +335,16 @@ namespace sgb {
 				break;
 
 			case 0x001E: // 0xFX1E: add VX to I
+				if (I + V[(opcode & 0x0F00) >> 8] > 0xFFF)	// VF is set to 1 when range overflow (I+VX>0xFFF), and 0 when there isn't.
+					V[0xF] = 1;
+				else
+					V[0xF] = 0;
 				I += V[(opcode & 0x0F00) >> 8];
 				next();
 				break;
 
 			case 0x0029: // 0xFX29: Set I to location of character sprite in VX
-				if (V[(opcode & 0x0F00) >> 8] < STACKSIZE)
-					I = V[(opcode & 0x0F00) >> 8] * 5;
+				I = V[(opcode & 0x0F00) >> 8] * 0x5;
 				next();
 				break;
 
@@ -335,6 +361,7 @@ namespace sgb {
 				for (int i = 0; i <= last; i++) {
 					memory[I + i] = V[i];
 				}
+				I += last + 1;
 			}
 				next();
 				break;
@@ -345,22 +372,22 @@ namespace sgb {
 				for (int i = 0; i <= last; i++) {
 					V[i] = memory[I + i];
 				}
+				I += last + 1;
 			}
 				next();
 				break;
 
 			default:
 				printf("Unknown opcode [0xF000]: 0x%X\n", opcode);
-				next();
 				break;
 			}
 			break;
 
 		default:
 			printf("unknown opcode: 0x%X\n", opcode);
-			next();
 			break;
 		}
+
 		// update timers
 		if (delay_timer > 0)
 			--delay_timer;
@@ -374,6 +401,11 @@ namespace sgb {
 	void Chip8::setKeys() {
 		for (int i = 0; i < STACKSIZE; i++)
 			key[i] = 0;
+
+		for (int i = 0; i < STACKSIZE; i++) {
+			if (sf::Keyboard::isKeyPressed(keymap[i]))
+				key[i] = 1;
+		}
 	}
 
 	void Chip8::next() {

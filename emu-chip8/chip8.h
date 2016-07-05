@@ -3,7 +3,7 @@
 
 #define STACKSIZE 16
 #define MEMSIZE 4096
-#define GFXSIZE 64*32
+#define GFXSIZE (64*32)
 #define NUMFONTS 80
 #define PROGSTART 0x200
 
@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <string>
 #include <time.h>
+
+#include <SFML/Window/Keyboard.hpp>
 
 /* 
  * System memory map
@@ -30,14 +32,14 @@ namespace sgb {
 
 		bool drawFlag; // set when screen should be redrawn
 
+		uint8_t gfx[GFXSIZE]; // pixels
+
 	private:
 		uint16_t opcode; // current opcode
 		uint8_t memory[MEMSIZE]; // chip8 memory
 		uint8_t V[STACKSIZE]; // registers
 		uint16_t I; // index register
 		uint16_t pc; // program counter
-		
-		uint8_t gfx[GFXSIZE]; // pixels
 		
 		// timers count down to zero when set above zero
 		// timers count at 60 hz
@@ -49,8 +51,10 @@ namespace sgb {
 
 		uint8_t key[STACKSIZE]; // keypad goes from 0x0 to 0xF
 
+		sf::Keyboard::Key keymap[STACKSIZE]; // map of keypad to keyboard
+
 		void next(); // go to next instruction
-		void skip(); // skip instruction
+		void skip(); // skip next instruction
 	};
 }
 
