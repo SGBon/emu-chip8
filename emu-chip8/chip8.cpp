@@ -1,5 +1,4 @@
 #include "chip8.h"
-#include <SFML\Audio.hpp>
 
 namespace sgb {
 
@@ -72,6 +71,13 @@ namespace sgb {
 
 		// load sound
 
+		if (!sb.loadFromFile("../sound/tone.ogg")) {
+			printf("could not find/read sound file, proceeding in silent mode\n");
+		}
+		else {
+			tone.setBuffer(sb);
+		}
+
 		srand(time(NULL));
 	}
 
@@ -83,8 +89,8 @@ namespace sgb {
 			for (size_t i = 0; i < bufferSize; i++)
 				memory[i + PROGSTART] = buffer[i];
 
-			for (int i = 0x200; i < 0x200 + bufferSize; i+=2) {
-				printf("%x %d\n", memory[i] << 8 | memory[i+1],i);
+			for (size_t i = 0x200; i < 0x200 + bufferSize; i+=2) {
+				//printf("%x %d\n", memory[i] << 8 | memory[i+1],i);
 			}
 			fclose(prog);
 		}
@@ -393,7 +399,7 @@ namespace sgb {
 			--delay_timer;
 
 		if (sound_timer > 0) {
-			printf("BEEP!\n");
+			playSound();
 			--sound_timer;
 		}
 	}
@@ -406,6 +412,11 @@ namespace sgb {
 			if (sf::Keyboard::isKeyPressed(keymap[i]))
 				key[i] = 1;
 		}
+	}
+
+	void Chip8::playSound() {
+		if (tone.getBuffer() && tone.getStatus() == tone.Stopped)
+			tone.play();
 	}
 
 	void Chip8::next() {

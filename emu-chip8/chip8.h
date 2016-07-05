@@ -14,6 +14,7 @@
 #include <time.h>
 
 #include <SFML/Window/Keyboard.hpp>
+#include <SFML\Audio.hpp>
 
 /* 
  * System memory map
@@ -53,8 +54,12 @@ namespace sgb {
 
 		sf::Keyboard::Key keymap[STACKSIZE]; // map of keypad to keyboard
 
+		sf::SoundBuffer sb;
+		sf::Sound tone;
+
 		void next(); // go to next instruction
 		void skip(); // skip next instruction
+		void playSound();
 	};
 }
 
