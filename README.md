@@ -4,3 +4,7 @@ Currently game to load is hardcoded in the main.cpp
 
 ### Required libraries
 Requires SFML to compile and run
+
+### ROMS
+They're all easily searchable online
+I tested with some games from this set http://www.zophar.net/pdroms/chip8/chip-8-games-pack.html
