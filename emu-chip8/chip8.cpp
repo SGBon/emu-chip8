@@ -293,7 +293,6 @@ namespace sgb {
 					next();
 				break;
 
-			case 0x00A0: // hack
 			case 0x00A1: // 0xEXA1: skip next isntruction if key in VX isn't pressed
 				if (key[V[(opcode & 0x0F00) >> 8]] == 0)
 					skip();
