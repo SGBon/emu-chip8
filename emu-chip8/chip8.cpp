@@ -277,7 +277,8 @@ namespace sgb {
 				}
 			}
 
-			drawFlag = true;
+			if(V[0xF] == 0)
+				drawFlag = true;
 			next();
 		}
 			break;
