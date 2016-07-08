@@ -1,6 +1,7 @@
+LIBS=-lsfml-window -lsfml-system -lsfml-graphics -lsfml-audio
 CXX=g++
 CXFLAGS=-c -Wall -std=c++11
-LDFLAGS=-lsfml-window -lsfml-system -lsfml-graphics -lsfml-audio
+LDFLAGS=$(LIBS)
 SOURCES=Main.cpp chip8.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=emuchip8
