@@ -23,13 +23,13 @@ namespace sgb {
 	};
 
 	Chip8::Chip8() :
+		drawFlag(true),
 		opcode(0),
 		I(0),
 		pc(PROGSTART),
 		delay_timer(0),
 		sound_timer(0),
-		sp(0),
-		drawFlag(true)
+		sp(0)
 	{
 		for (int i = 0; i < MEMSIZE; i++) {
 			memory[i] = 0;
@@ -102,7 +102,7 @@ namespace sgb {
 	void Chip8::emulateCycle() {
 		// fetch opcode
 		opcode = memory[pc] << 8 | memory[pc + 1];
-		
+
 		// decode opcode
 		switch (opcode & 0xF000) {
 
