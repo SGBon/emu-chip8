@@ -273,3 +273,9 @@ paket-files/
 *.exe
 *.out
 *.app
+
+# Specific executable for the emulator made by makefile
+emuchip8
+
+# Chip8 games directoyr
+/c8games
